@@ -1,0 +1,64 @@
+name: Scheduled Release
+
+on:
+  schedule:
+    - cron: '0 0 1 */2 *' # This runs at 00:00 on the first day of every second month
+  workflow_dispatch: # Allows for manual triggering of the workflow
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.12.4'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run tests
+      run: |
+        python -m unittest discover -s tests
+
+    - name: Build Executable
+      run: |
+        pyinstaller main.spec
+
+    - name: Rename Executable
+      run: |
+        mv ./dist/main.exe ./dist/TkPDF.exe
+
+    - name: Get Release Notes
+      id: drafter
+      uses: release-drafter/release-drafter@v5
+      with:
+        config-name: release-drafter.yml
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ github.run_number }}
+        release_name: "Scheduled Release - v${{ github.run_number }}"
+        body: ${{ steps.drafter.outputs.body }}
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./dist/TkPDF.exe
+        asset_name: TkPDF.exe
+        asset_content_type: application/octet-stream
