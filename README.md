@@ -45,6 +45,16 @@ python main.py
 2. Select the PDF files to merge in the file selection dialog.
 3. Choose the location and name for the merged output PDF file.
 
+## Building the Executable for Windows
+
+To create an executable for Windows, use the following command:
+
+```sh
+pyinstaller main.spec
+```
+
+This will create a standalone executable in the `dist` directory.
+
 ## Tests
 
 Unit tests for this project are located in the `tests` directory. To run the tests, use the following command:
@@ -58,6 +68,7 @@ python -m unittest discover -s tests
 ```
 tkpdf/
 ├── main.py
+├── icon.ico
 └── tests/
     └── test_pdf_utility.py
 ```
@@ -77,4 +88,3 @@ Contributions are welcome! Please submit a pull request or open an issue to disc
 ## License
 
 This project is licensed under the MIT License. See the LICENSE file for details.
-

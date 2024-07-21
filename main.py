@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import filedialog
 from PIL import Image
 from PyPDF2 import PdfMerger
+import os
+import sys
 
 def convert_img_to_pdf(file_path, pdf_path):
     image = Image.open(file_path)
@@ -32,11 +34,23 @@ def gui_merge_pdfs():
             result = merge_pdfs(files, output_path)
             print(f"PDFs merged into: {result}")
 
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
 if __name__ == "__main__":
     # Créer la fenêtre principale
     root = tk.Tk()
     root.title("PDF Utility")
     root.geometry("400x200")
+
+    # Définir l'icône de la fenêtre
+    icon_path = resource_path('icon.ico')
+    root.iconbitmap(icon_path)
 
     # Créer les boutons
     button_convert = tk.Button(root, text="Convert img to PDF", command=gui_convert_img_to_pdf, width=20, height=5)
