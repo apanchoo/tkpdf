@@ -33,11 +33,11 @@ jobs:
 
     - name: Rename Executable
       run: |
-        mv ./dist/main.exe ./dist/TkPDF.exe
+        mv ./dist/main ./dist/TkPDF.exe
 
     - name: Get Release Notes
       id: drafter
-      uses: release-drafter/release-drafter@v5
+      uses: release-drafter/release-drafter@v6
       with:
         config-name: release-drafter.yml
 
