@@ -33,7 +33,7 @@ jobs:
 
     - name: Rename Executable
       run: |
-        mv ./dist/main.exe ./dist/TkPDF.exe
+        mv ./dist/main ./dist/TkPDF.exe
 
     - name: Get Release Notes
       id: drafter
