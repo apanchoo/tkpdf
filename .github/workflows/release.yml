@@ -3,7 +3,10 @@ name: Scheduled Release
 on:
   schedule:
     - cron: '0 0 1 */2 *'  # Tous les 2 mois à minuit UTC
-  workflow_dispatch:        # Lancement manuel via GitHub UI
+  workflow_dispatch:
+
+permissions:
+  contents: write  # Nécessaire pour publier une release
 
 jobs:
   build:
@@ -86,8 +89,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ github.run_number }}
-          release_name: "Scheduled Release - v${{ github.run_number }}"
+          tag_name: v1.0.${{ github.run_number }}
+          release_name: "Scheduled Release - v1.0.${{ github.run_number }}"
           body: ${{ steps.drafter.outputs.body }}
           draft: false
           prerelease: false
