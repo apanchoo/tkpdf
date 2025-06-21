@@ -2,63 +2,116 @@ name: Scheduled Release
 
 on:
   schedule:
-    - cron: '0 0 1 */2 *' # This runs at 00:00 on the first day of every second month
-  workflow_dispatch: # Allows for manual triggering of the workflow
+    - cron: '0 0 1 */2 *'  # Tous les 2 mois
+  workflow_dispatch:
 
 jobs:
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+
+      - name: Run tests
+        run: python -m unittest discover -s tests
+
+      - name: Build Executable
+        run: pyinstaller main.spec
+
+      - name: Rename Executable
+        run: |
+          mkdir dist-out
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            mv dist\\main\\main.exe dist-out\\TkPDF.exe
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            mv dist/main dist-out/TkPDF-macos
+          else
+            mv dist/main dist-out/TkPDF-linux
+          fi
+        shell: bash
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.os }}
+          path: dist-out/*
+
   release:
+    name: Create GitHub Release
+    needs: build
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.13.5'
+      - name: Flatten artifacts
+        run: |
+          mkdir dist-release
+          find artifacts -type f -exec cp {} dist-release/ \;
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      - name: Get Release Notes
+        id: drafter
+        uses: release-drafter/release-drafter@v6
+        with:
+          config-name: release-drafter.yml
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Run tests
-      run: |
-        python -m unittest discover -s tests
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: "Scheduled Release - v${{ github.run_number }}"
+          body: ${{ steps.drafter.outputs.body }}
+          draft: false
+          prerelease: false
 
-    - name: Build Executable
-      run: |
-        pyinstaller main.spec
+      - name: Upload all binaries to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist-release/TkPDF.exe
+          asset_name: TkPDF.exe
+          asset_content_type: application/octet-stream
 
-    - name: Rename Executable
-      run: |
-        mv ./dist/main ./dist/TkPDF.exe
+      - name: Upload Linux binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist-release/TkPDF-linux
+          asset_name: TkPDF-linux
+          asset_content_type: application/octet-stream
 
-    - name: Get Release Notes
-      id: drafter
-      uses: release-drafter/release-drafter@v6
-      with:
-        config-name: release-drafter.yml
-
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: v${{ github.run_number }}
-        release_name: "Scheduled Release - v${{ github.run_number }}"
-        body: ${{ steps.drafter.outputs.body }}
-        draft: false
-        prerelease: false
-
-    - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./dist/TkPDF.exe
-        asset_name: TkPDF.exe
-        asset_content_type: application/octet-stream
+      - name: Upload macOS binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist-release/TkPDF-macos
+          asset_name: TkPDF-macos
+          asset_content_type: application/octet-stream
