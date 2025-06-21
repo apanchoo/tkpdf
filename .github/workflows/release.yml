@@ -2,7 +2,7 @@ name: Scheduled Release
 
 on:
   schedule:
-    - cron: '0 0 1 */2 *'  # Tous les 2 mois à minuit
+    - cron: '0 0 1 */2 *'  # Tous les 2 mois à minuit UTC
   workflow_dispatch:        # Lancement manuel via GitHub UI
 
 jobs:
@@ -33,15 +33,22 @@ jobs:
       - name: Build Executable
         run: pyinstaller main.spec
 
-      - name: Copy Executable
-        run: |
-          mkdir dist-out
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            cp dist/TkPDF.exe dist-out/TkPDF.exe
-          elif [ "$RUNNER_OS" == "macOS" ]; then
-            cp dist/TkPDF dist-out/TkPDF-macos
-          else
-            cp dist/TkPDF dist-out/TkPDF-linux
+      - name: Prepare Output Directory
+        run: mkdir dist-out
+
+      - name: Copy Executable (Windows)
+        if: runner.os == 'Windows'
+        run: cp dist/TkPDF.exe dist-out/TkPDF.exe
+        shell: bash
+
+      - name: Copy Executable (macOS)
+        if: runner.os == 'macOS'
+        run: cp dist/TkPDF dist-out/TkPDF-macos
+        shell: bash
+
+      - name: Copy Executable (Linux)
+        if: runner.os == 'Linux'
+        run: cp dist/TkPDF dist-out/TkPDF-linux
         shell: bash
 
       - name: Upload artifact
@@ -86,6 +93,7 @@ jobs:
           prerelease: false
 
       - name: Upload Windows binary
+        continue-on-error: true
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -96,6 +104,7 @@ jobs:
           asset_content_type: application/octet-stream
 
       - name: Upload Linux binary
+        continue-on-error: true
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -106,6 +115,7 @@ jobs:
           asset_content_type: application/octet-stream
 
       - name: Upload macOS binary
+        continue-on-error: true
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
