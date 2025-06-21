@@ -2,8 +2,8 @@ name: Scheduled Release
 
 on:
   schedule:
-    - cron: '0 0 1 */2 *'  # Tous les 2 mois
-  workflow_dispatch:
+    - cron: '0 0 1 */2 *'  # Tous les 2 mois à minuit
+  workflow_dispatch:        # Lancement manuel via GitHub UI
 
 jobs:
   build:
@@ -33,16 +33,15 @@ jobs:
       - name: Build Executable
         run: pyinstaller main.spec
 
-      - name: Rename Executable
+      - name: Copy Executable
         run: |
           mkdir dist-out
           if [ "$RUNNER_OS" == "Windows" ]; then
-            mv dist\\main\\main.exe dist-out\\TkPDF.exe
+            cp dist/TkPDF.exe dist-out/TkPDF.exe
           elif [ "$RUNNER_OS" == "macOS" ]; then
-            mv dist/main dist-out/TkPDF-macos
+            cp dist/TkPDF dist-out/TkPDF-macos
           else
-            mv dist/main dist-out/TkPDF-linux
-          fi
+            cp dist/TkPDF dist-out/TkPDF-linux
         shell: bash
 
       - name: Upload artifact
@@ -86,7 +85,7 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Upload all binaries to Release
+      - name: Upload Windows binary
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
