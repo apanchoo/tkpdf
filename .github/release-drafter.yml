@@ -5,7 +5,7 @@ template: |
   ## What's Changed
   $CHANGES
 
-  **Full Changelog**: ${{ compare_url }}
+  **Full Changelog:** ${{ compare_url }}
 
 change-template: '- $TITLE by @$AUTHOR'
 no-changes-template: '- No changes'
